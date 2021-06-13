@@ -10,6 +10,7 @@ const messages = document.querySelector('#messages');
 
 //! Templates
 const chatTemplate = document.querySelector('#chat-template').innerHTML;
+const locationTemplate = document.querySelector('#location-template').innerHTML;
 
 socket.on('message', (message) => {
   const html = Mustache.render(chatTemplate, {
@@ -32,6 +33,13 @@ messageForm.addEventListener('submit', (e) => {
 
     console.log(msg);
   });
+});
+
+socket.on('locationMessage', (url) => {
+  const html = Mustache.render(locationTemplate, {
+    url,
+  });
+  messages.insertAdjacentHTML('beforeend', html);
 });
 
 locationButton.addEventListener('click', () => {
