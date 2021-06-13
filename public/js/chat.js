@@ -1,13 +1,54 @@
 const socket = io();
 
+const messageForm = document.querySelector('#chat-form');
+const messageFormInput = document.querySelector('#msg');
+const messageFormButton = document.querySelector('#submit');
+
+const locationButton = document.querySelector('#send-loc');
+
+const messages = document.querySelector('#messages');
+
+//! Templates
+const chatTemplate = document.querySelector('#chat-template').innerHTML;
+
 socket.on('message', (message) => {
-  console.log(message);
+  const html = Mustache.render(chatTemplate, {
+    message,
+  });
+  messages.insertAdjacentHTML('beforeend', html);
 });
 
-document.querySelector('#chat-form').addEventListener('submit', (e) => {
+messageForm.addEventListener('submit', (e) => {
   e.preventDefault();
 
-  const message = document.querySelector('#msg').value;
+  messageFormButton.setAttribute('disabled', 'disabled');
 
-  socket.emit('sendMsg', message);
+  const message = messageFormInput.value;
+
+  socket.emit('sendMsg', message, (msg) => {
+    messageFormButton.removeAttribute('disabled', 'disabled');
+    messageFormInput.value = '';
+    messageFormInput.focus();
+
+    console.log(msg);
+  });
+});
+
+locationButton.addEventListener('click', () => {
+  locationButton.setAttribute('disabled', 'disabled');
+
+  navigator.geolocation.getCurrentPosition((position) => {
+    socket.emit(
+      'sendLocation',
+      {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+      },
+      (msg) => {
+        locationButton.removeAttribute('disabled', 'disabled');
+
+        console.log(msg);
+      }
+    );
+  });
 });

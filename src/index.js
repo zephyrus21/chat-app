@@ -21,9 +21,21 @@ io.on('connection', (socket) => {
   //? This will emit to all but the particular connection
   socket.broadcast.emit('message', 'A new user connected');
 
-  socket.on('sendMsg', (message) => {
+  socket.on('sendMsg', (message, callback) => {
     //? This will emit to all the connections but with realtime render
     io.emit('message', message);
+
+    //? This will send a acknowledgement to the client
+    callback('Delivered ✔');
+  });
+
+  socket.on('sendLocation', ({ latitude, longitude }, callback) => {
+    io.emit(
+      'message',
+      `https://www.google.com/maps?q=${latitude},${longitude}`
+    );
+
+    callback('Location shared ✔');
   });
 
   socket.on('disconnect', () => {
