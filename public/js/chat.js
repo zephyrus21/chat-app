@@ -19,12 +19,52 @@ const { username, room } = Qs.parse(location.search, {
   ignoreQueryPrefix: true,
 });
 
+const autoScroll = () => {
+  const newMessage = messages.lastElementChild;
+
+  //? Height of the new message
+  const newMessageStyles = getComputedStyle(newMessage);
+  const newMessageMargin = parseInt(newMessageStyles.marginBottom);
+  const newMessageHeight = newMessage.offsetHeight + newMessageMargin;
+
+  //? Visible height
+  const visibleHeight = messages.offsetHeight;
+
+  //? Height of messages container
+  const containerHeight = messages.scrollHeight;
+
+  //? How far have I scrolled?
+  const scrollOffset = messages.scrollTop + visibleHeight;
+
+  if (containerHeight - newMessageHeight <= scrollOffset) {
+    messages.scrollTop = messages.scrollHeight;
+  }
+};
+
 socket.on('message', (message) => {
   const html = Mustache.render(chatTemplate, {
     username: message.username,
     message: message.text,
   });
   messages.insertAdjacentHTML('beforeend', html);
+  autoScroll();
+});
+
+socket.on('locationMessage', (message) => {
+  const html = Mustache.render(locationTemplate, {
+    username: message.username,
+    url: message.url,
+  });
+  messages.insertAdjacentHTML('beforeend', html);
+  autoScroll();
+});
+
+socket.on('roomData', ({ room, users }) => {
+  const html = Mustache.render(sidebarTemplate, {
+    users,
+    room,
+  });
+  sidebar.innerHTML = html;
 });
 
 messageForm.addEventListener('submit', (e) => {
@@ -35,26 +75,10 @@ messageForm.addEventListener('submit', (e) => {
   const message = messageFormInput.value;
 
   socket.emit('sendMsg', message, (msg) => {
-    messageFormButton.removeAttribute('disabled', 'disabled');
+    messageFormButton.removeAttribute('disabled');
     messageFormInput.value = '';
     messageFormInput.focus();
   });
-});
-
-socket.on('locationMessage', (message) => {
-  const html = Mustache.render(locationTemplate, {
-    username: message.username,
-    url: message.url,
-  });
-  messages.insertAdjacentHTML('beforeend', html);
-});
-
-socket.on('roomData', ({ room, users }) => {
-  const html = Mustache.render(sidebarTemplate, {
-    users,
-    room,
-  });
-  sidebar.innerHTML = html;
 });
 
 locationButton.addEventListener('click', () => {
@@ -67,7 +91,7 @@ locationButton.addEventListener('click', () => {
         latitude: position.coords.latitude,
         longitude: position.coords.longitude,
       },
-      (msg) => {
+      () => {
         locationButton.removeAttribute('disabled', 'disabled');
       }
     );
